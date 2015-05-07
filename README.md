@@ -46,6 +46,9 @@ YoBuilder
 说明：自定义路径，支持绝对路径和相对路径。对install命令都有效。
 
 例如：fekit yo --install --path '/Users/guest/yo'    fekit yo --install --path '../guest/yo'
+     fekit yo -i 1.0.4 --path test01
+     fekit yo -i 1.0.4 --path ./test01
+
 
 
 ## TODO

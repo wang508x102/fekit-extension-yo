@@ -263,6 +263,16 @@ function install(installPath,version) {
 
 // 判断当前目录下 yo 文件是否存在
 function existInstall(tarFile,installPath) {
+    // log(installPath);
+    // log(installPath + '/' + infoFile);
+    // log('installPath=' + fs.existsSync(installPath));
+
+    // if(!fs.existsSync(installPath)){
+    //     fs.mkdir(installPath,function(err){
+    //         log('dsfsd'+err);
+    //     });
+
+    // }
 
     if(fs.existsSync(installPath + '/' + infoFile)) {
         var rl = readline.createInterface({
@@ -271,11 +281,13 @@ function existInstall(tarFile,installPath) {
         });
         var question = '本地已存在' + infoFile + '是否替换Y/N: ';
         //log(question);
-        rl.question(question, function(answer) {
+        rl.question(question.yellow, function(answer) {
             if(answer == "N") {
                process.exit (1);
             }
             else {
+
+                fsUtil.rmDirSync(installPath + '/' + infoFile);
                 extractData(tarFile, installPath);
                 rl.close();
             }
@@ -296,9 +308,11 @@ function extractData(tarFile,installPath) {
             if(!fs.existsSync('./tmp')){
                 fs.mkdirSync('./tmp');
             }
-            tmpPath = './tmp/yo.tar.gz';
-            fs.writeFileSync(tmpPath, body);
 
+            //tmpPath = './tmp/yo.tar.gz';
+            tmpPath = './tmp/yo.map';
+            fs.writeFileSync(tmpPath, body);
+           // log(installPath);
             //解压
             new targz().extract(tmpPath, installPath, function(err) {
                 //log(err);
@@ -339,16 +353,19 @@ function updateDate(tarFile,installPath){
             }
             tmpPath = './tmp/yo.tar.gz';
             fs.writeFileSync(tmpPath, body);
-
-            //log(installPath);
-            // log(tmpPath);
+            //log(fs.existsSync('./tmp/yo.tar.gz'));
             //解压
             new targz().extract(tmpPath, './tmp' , function(err) {
                 //log(err);
                 if(!err) {
                     if(fs.existsSync('./tmp/yo/lib/')){
                         var newpath = installPath+'/yo/lib/';
-                        fsUtil.rmDirSync(newpath);
+                            newpath = path.join(installPath , '/yo/lib');
+                            // log(newpath);
+                            // log(fs.existsSync(newpath));
+                        if(fs.existsSync(newpath)){
+                            fsUtil.rmDirSync(newpath);
+                        }
                         fs.rename('./tmp/yo/lib/',newpath ,function(err){
                             //log(err);
                              if(err){
@@ -434,7 +451,9 @@ exports.run = function(options) {
 
     if(customPath) {
         if(customPath !== true) {
-            root = customPath.charAt(0) == '/' ? customPath : path.join(cwd, customPath)
+            //root = customPath.charAt(0) == '/' ? cwd + customPath : path.join(cwd, customPath)
+            //TODO
+            root = customPath.charAt(0) == '/' ? path.join(cwd, customPath) : path.join(cwd, customPath)
             //log(root);
         }else{
             error('输入有误，请输入--help查看yo命令工具帮助');
@@ -464,9 +483,7 @@ exports.run = function(options) {
         var version = options.i || options.install;
         install(root,version);
     }else {
-        log(options);
         var updateversion = options.u || options.update;
-        //var installPath = options.path ? root : path.join(root,'yo');
         update(root,updateversion);
     }
 
