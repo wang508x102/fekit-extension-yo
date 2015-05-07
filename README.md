@@ -2,71 +2,44 @@ YoBuilder
 =============================
 依赖于fekit，当前版本已支持组件的多版本管理
 
-### fekit extension是什么? ###
+## 安装
+执行npm install fekit-extension-yo
 
-有时你希望增加一些命令给 fekit，但是大多数情况下并不想把它加入 fekit project 官方命令中。
+## 使用流程
+1. 在需要使用Yo库的目录下执行fekit yo --install命令,将在该下安装所有yo文件
+2. 可指定安装版本 fekit yo --install '1.0.1'
+3. 使用--path可以自定义安装路径
 
-所以，fekit extension为你提供了这样一种办法来扩展命令。
+## 命令介绍
+安装完YoBuilder后可以执行fekit yo --help查看命令使用帮助
 
-## 如何开发？ ###
+### --install || -i
+说明：当前目录下安装最新版yo文件
 
-请先将本项目 clone 到本地(假设要开发一个svn扩展)
+例如：fekit yo -i
 
-    git clone git@github.com:rinh/fekit-extension-template.git ./fekit-extension-svn
+### --install [版本号] || -i [版本号]
+参数：版本号 格式 1.0.1
+说明：当前目录下安装指定版本yo文件
 
-本项目是 extension标准模板，以下文件是你需要修改的。
+例如：fekit yo -i '1.0.0'
 
-* index.js  --- 扩展入口文件，主要功能需要写在这里
-* package.json  --- npm 配置文件
-* README.md  --- 说明文档，简单介绍一下你的功能
+### --publish || -p
+说明：发布，仅供开发者使用！默认打包到当前目录下的yo-source文件夹。必须保证组件当前配置的version(/yo/lib/core/variables.scss中的version)大于yo-source/yo.config中配置的版本，否则**发布失败**。发布成功后会自动更新kami-source中的版本号。
 
-#### package.json  ####
+例如：fekit yo -p
 
-    {
-        // *必填项* 扩展命令名称
-        "fekit_extension_command_name":"",
-        // *必填项* 例 fekit-extension-svn
-        "name": "fekit-extension-template",
-        // *必填项* 请维护你的依赖
-        "version": "0.0.0"
-    }
+### --version || -v
+说明：查看Yo构建工具版本号。
 
-## 如何发布? ###
+例如：fekit yo -v
 
-    npm publish
+### --path
+说明：自定义路径，支持绝对路径和相对路径。对install命令都有效。
 
-## 如何使用? ###
-
-以 svn 为例
-
-package.json
-
-    {
-        // *必填项* 扩展命令名称
-        "fekit_extension_command_name":"svn",
-        // *必填项* 例 fekit-extension-svn
-        "name": "fekit-extension-svn",
-        // *必填项* 请维护你的依赖
-        "version": "0.1.0"
-    }
-
-命令行
-
-    npm install fekit-extension-svn -g
-
-    fekit svn --help
+例如：fekit yo --install --path '/Users/guest/yo'    fekit yo --install --path '../guest/yo'
 
 
-### 安装时的一些问题 ###
-
-如果出现
-
-    sh: node: feni denied
-
-这样的提示，请使用
-
-    npm config set user 0
-    npm config set unsafe-perm true
-
-
+## TODO
+1）提供单独的Yo命令工具，不依赖于fekit，需要考虑如何解决require问题
 
