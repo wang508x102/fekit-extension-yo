@@ -20,9 +20,17 @@ YoBuilder
 
 ### --install [版本号] || -i [版本号]
 参数：版本号 格式 1.0.1
+
 说明：当前目录下安装指定版本yo文件
 
 例如：fekit yo -i '1.0.0'
+
+### --update [版本号] || -u [版本号]
+参数：版本号 格式 1.0.1
+
+说明：更新当前目录下yo/lib文件
+
+例如：fekit yo -u '1.0.0'
 
 ### --publish || -p
 说明：发布，仅供开发者使用！默认打包到当前目录下的yo-source文件夹。必须保证组件当前配置的version(/yo/lib/core/variables.scss中的version)大于yo-source/yo.config中配置的版本，否则**发布失败**。发布成功后会自动更新kami-source中的版本号。

@@ -264,12 +264,13 @@ function install(installPath,version) {
 // 判断当前目录下 yo 文件是否存在
 function existInstall(tarFile,installPath) {
 
-    if(fs.existsSync(infoFile)) {
+    if(fs.existsSync(installPath + '/' + infoFile)) {
         var rl = readline.createInterface({
           input: process.stdin,
           output: process.stdout
         });
         var question = '本地已存在' + infoFile + '是否替换Y/N: ';
+        //log(question);
         rl.question(question, function(answer) {
             if(answer == "N") {
                process.exit (1);
@@ -297,8 +298,10 @@ function extractData(tarFile,installPath) {
             }
             tmpPath = './tmp/yo.tar.gz';
             fs.writeFileSync(tmpPath, body);
+
             //解压
             new targz().extract(tmpPath, installPath, function(err) {
+                //log(err);
                 if(err) {
                     error('安装失败');
                 }else{
@@ -314,30 +317,52 @@ function extractData(tarFile,installPath) {
     })
 }
 
+
+/**
+ * Yo库更新
+ *
+ * @root 命令执行的根路径
+ * @source Yo的根路径
+ * 默认安装整个yo目录文件
+ */
+
 function updateDate(tarFile,installPath){
+    //log(tarFile);
     request({
         url: tarFile,
         encoding: null
     }, function(err, res, body){
         if(!err && res.statusCode === 200) {
-            //创建写入临时文件夹
+              // 创建写入临时文件夹
             if(!fs.existsSync('./tmp')){
                 fs.mkdirSync('./tmp');
             }
             tmpPath = './tmp/yo.tar.gz';
             fs.writeFileSync(tmpPath, body);
+
+            //log(installPath);
+            // log(tmpPath);
             //解压
-            new targz().extract(tmpPath, './tmp/', function(err) {
-                if(err) {
-                    error('安装失败');
+            new targz().extract(tmpPath, './tmp' , function(err) {
+                //log(err);
+                if(!err) {
+                    if(fs.existsSync('./tmp/yo/lib/')){
+                        var newpath = installPath+'/yo/lib/';
+                        fsUtil.rmDirSync(newpath);
+                        fs.rename('./tmp/yo/lib/',newpath ,function(err){
+                            //log(err);
+                             if(err){
+                                 error('更新失败');
+                             }else{
+                                 success('更新成功');
+                                 fsUtil.rmDirSync('./tmp/');
+                             }
+                        });
+                    };
                 }else{
-                    success('安装成功');
-                    fs.readdir('./tmp/',function(err,files){
-                        log(err);
-                        log(files);
-                    })
-                    //fsUtil.rmDirSync('./tmp/');
+                    error('文件解析失败！');
                 }
+
             });
         }
     });
@@ -388,8 +413,8 @@ exports.set_options = function(optimist) {
     optimist.alias('i', 'install');
     optimist.describe('i', '安装Yo');
 
-    // optimist.alias('u', 'update');
-    // optimist.describe('u', '更新Yo');
+    optimist.alias('u', 'update');
+    optimist.describe('u', '更新Yo');
 
     optimist.alias('v', 'version');
     optimist.describe('v', '查看yo构建工具版本号');
@@ -439,10 +464,10 @@ exports.run = function(options) {
         var version = options.i || options.install;
         install(root,version);
     }else {
-
-        var updateverion = options.u || options.update;
-       // var installPath = options.path ? root : path.join(root,'yo');
-        update(root,updateverion);
+        log(options);
+        var updateversion = options.u || options.update;
+        //var installPath = options.path ? root : path.join(root,'yo');
+        update(root,updateversion);
     }
 
 }
