@@ -7,8 +7,9 @@ var fs = require('fs'),
     readline = require('readline'),
     fsUtil = require('./fs-util');
 
-// 下载地址 http://ued.qunar.com/mobile/source/yo/';
-var BASE_URL = 'http://localhost:4369/test/lili/';
+// 下载地址
+var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
+//var BASE_URL = 'http://localhost:4369/test/lili/';
 
 var buildVersion = '1.0.1';
 // 默认安装目录
@@ -23,7 +24,8 @@ var versionFile = 'core/variables.scss';
 // 配置文件
 var yoConfigFile = "yo.config";
 // 上传路径
-var uploadurl = 'http://localhost:4369/upload?path=test/lili';
+//var uploadurl = 'http://localhost:4369/upload?path=test/lili';
+var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
 
