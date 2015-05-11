@@ -11,7 +11,7 @@ var fs = require('fs'),
 var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
 //var BASE_URL = 'http://localhost:4369/test/lili/';
 
-var buildVersion = '1.0.0';
+var buildVersion = '0.0.1';
 // 默认安装目录
 //var yoWidgets = 'yo/';
 
@@ -274,17 +274,15 @@ function install(installPath,version) {
 
 // 判断当前目录下 yo 文件是否存在
 function existInstall(tarFile,installPath) {
-    //log(installPath);
-    if(fs.existsSync(installPath + '/' + infoFile)) {
+    if(fs.existsSync(installPath + '/src/' + infoFile)) {
         var rl = readline.createInterface({
           input: process.stdin,
           output: process.stdout
         });
         var question = '本地已存在' + infoFile + '是否替换Y/N: ';
-        //log(question);
         rl.question(question.yellow, function(answer) {
             if(answer.match(/^y(es)?$/i)){
-                fsUtil.rmDirSync(installPath + '/' + infoFile);
+                fsUtil.rmDirSync(installPath + '/src/' + infoFile);
                 extractData(tarFile, installPath);
                 rl.close();
             }else{
@@ -315,8 +313,9 @@ function extractData(tarFile,installPath) {
                 error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
             }
             else{
+                var extractPath =  path.join(installPath,'src');
                 //解压
-                new targz().extract(tmpPath, installPath, function(err) {
+                new targz().extract(tmpPath, extractPath, function(err) {
                     //log(err);
                     if(err) {
                         error('安装失败');
