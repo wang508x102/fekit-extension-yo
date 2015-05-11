@@ -11,16 +11,16 @@ var fs = require('fs'),
 var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
 //var BASE_URL = 'http://localhost:4369/test/lili/';
 
-var buildVersion = '1.0.1';
+var buildVersion = '1.0.0';
 // 默认安装目录
 //var yoWidgets = 'yo/';
 
 // 配置目录 需要压缩上传的目录
-var infoFile = 'lib/';
-    infoFile = 'yo/';
+//var infoFile = 'lib/';
+var infoFile = 'yo/';
 // 配置目录版本信息文件
-var versionFile = 'core/variables.scss';
-    versionFile = 'lib/core/variables.scss';
+//var versionFile = 'core/variables.scss';
+var versionFile = 'lib/core/variables.scss';
 // 配置文件
 var yoConfigFile = "yo.config";
 // 上传路径
