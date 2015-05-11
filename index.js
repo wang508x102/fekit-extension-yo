@@ -8,8 +8,8 @@ var fs = require('fs'),
     fsUtil = require('./fs-util');
 
 // 下载地址
-var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
-//var BASE_URL = 'http://localhost:4369/test/lili/';
+//var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
+var BASE_URL = 'http://localhost:4369/test/lili/';
 
 var buildVersion = '0.0.1';
 // 默认安装目录
@@ -24,10 +24,13 @@ var versionFile = 'lib/core/variables.scss';
 // 配置文件
 var yoConfigFile = "yo.config";
 // 上传路径
-//var uploadurl = 'http://localhost:4369/upload?path=test/lili';
-var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
+var uploadurl = 'http://localhost:4369/upload?path=test/lili';
+//var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
+
+// 排除的文件
+var excludeFile = ['.git', '.gitignore', '.DS_Store','node_modules','.sass-cache'];
 
 var log = console.log;
 var success = function(msg) {
@@ -116,9 +119,12 @@ function publish(root) {
 
     //检测服务器 yo.config 是否存在 存在比较版本号 不存在 直接上传
     request(sourceConfigFile, function(err, res, body) {
+            var versionList = [];
             if (!err && res.statusCode === 200) {
+
                 try {
                     var tmpdata= JSON.parse(body);
+                    //log(tmpdata.history);
                     sourceVersion = tmpdata.version;
                     if(version === sourceVersion) {
                         error('当前打包版本' + version + ' 与服务器最新版本一样！');
@@ -128,7 +134,11 @@ function publish(root) {
                             error('当前打包版本 ' + version + '小于服务器最新版本号！');
                             return;
                         }
-                        createTmpDir(root,version);
+                        //log(versionList);
+                        versionList = tmpdata.history;
+                        versionList.push(version);
+                        //log(versionList);
+                        createTmpDir(root,version,versionList);
                          //得到 yo.config文件  压缩 yo 包
                         compressData(infoFile,version,root);
                     }
@@ -138,32 +148,36 @@ function publish(root) {
                 }
             } else {
                //error('版本配置文件下载失败！');
-                createTmpDir(root,version);
+                //log(versionList);
+                versionList.push(version);
+                createTmpDir(root,version,versionList);
                 compressData(infoFile,version,root);
             }
         });
 }
 // 创建临时文件
-function createTmpDir(root,version) {
+function createTmpDir(root,version,versionList) {
     if(!fs.existsSync('./tmp/')) {
         fs.mkdirSync('./tmp/');
     }
     var localConfigFile = path.join(root,'./tmp/' + yoConfigFile)
     //检测本地是否有yo.config文件  有则写入当前版本号  无则创建并写入当前版本号
-    checkLocalConfig(localConfigFile,version);
+    checkLocalConfig(localConfigFile,version,versionList);
 }
 // 检查本地是否有yo.config 文件
-function checkLocalConfig(localConfigFile,version) {
+function checkLocalConfig(localConfigFile,version,versionList) {
+
     var tempAccount = {
                 "version" : version,
                 "desc": "yo 版本号",
                 "auth": ""
             };
+    tempAccount.history = versionList;
     fs.writeFile(localConfigFile,JSON.stringify(tempAccount),function(err) {
         if(err) {
             log('写文件' + localConfigFile + '操作失败,请重新发布');
         }
-    })
+    });
 }
 // 发布进度
 function uploadProcess(successNum,version,path) {
@@ -194,7 +208,6 @@ function rmNoEmptydir(path) {
 }
 // 压缩并发布文件
 function compressData(infoFile,version,root) {
-
     new targz().compress(infoFile, root + '/tmp/yo@' + version + '.map', function(err) {
         if (err) {
             error('版本' + version + '压缩失败,请重试');
@@ -300,31 +313,81 @@ function extractData(tarFile,installPath) {
         encoding: null
     },function (err, res, body) {
         if (!err && res.statusCode === 200) {
-            // 创建写入临时文件夹
-            if(!fs.existsSync('./tmp')){
-                fs.mkdirSync('./tmp');
-            }
-
-            //tmpPath = './tmp/yo.tar.gz';
-            tmpPath = './tmp/yo.map';
-            fs.writeFileSync(tmpPath, body);
-
-            if(!fs.existsSync(installPath)){
-                error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
-            }
-            else{
-                var extractPath =  path.join(installPath,'src');
-                //解压
-                new targz().extract(tmpPath, extractPath, function(err) {
-                    //log(err);
-                    if(err) {
-                        error('安装失败');
-                    }else{
-                        success('安装成功');
-                        fsUtil.rmDirSync('./tmp/');
+             // 创建写入临时文件夹
+                    if(!fs.existsSync('./tmp')){
+                        fs.mkdirSync('./tmp');
                     }
-                });
-            }
+
+                    //tmpPath = './tmp/yo.tar.gz';
+                    tmpPath = './tmp/yo.map';
+                    fs.writeFileSync(tmpPath, body);
+                    var extractPath =  path.join(installPath,'src');
+                    //解压
+                    new targz().extract(tmpPath, extractPath, function(err) {
+                        if(err) {
+                            error('安装失败');
+                        }else{
+                            success('安装成功');
+                            fsUtil.rmDirSync('./tmp/');
+                            //fs.unlinkSync(temPathFile);
+                             //清除文件夹中无用的版本文件
+                            excludeFile.forEach(function(ex, index) {
+                                var exFile = path.join(extractPath, infoFile + ex);
+                                if(fs.existsSync(exFile)) {
+                                    if(index == 0 || index == 3 || index == 4) {
+                                        fsUtil.rmDirSync(exFile);
+                                    } else {
+                                        fs.unlinkSync(exFile);
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+            // var temPathFile = installPath + 'tmpPathFile.txt';
+            // var temPathFile = path.join(installPath , 'tmpPathFile.txt');
+            // fs.writeFile(temPathFile, 'installPath', function(err){
+            //     log(err);
+            //     if(!err){
+            //         // 创建写入临时文件夹
+            //         if(!fs.existsSync('./tmp')){
+            //             fs.mkdirSync('./tmp');
+            //         }
+
+            //         //tmpPath = './tmp/yo.tar.gz';
+            //         tmpPath = './tmp/yo.map';
+            //         fs.writeFileSync(tmpPath, body);
+            //         var extractPath =  path.join(installPath,'src');
+            //         //解压
+            //         new targz().extract(tmpPath, extractPath, function(err) {
+            //             if(err) {
+            //                 error('安装失败');
+            //             }else{
+            //                 success('安装成功');
+            //                 fsUtil.rmDirSync('./tmp/');
+            //                 fs.unlinkSync(temPathFile);
+            //                  //清除文件夹中无用的版本文件
+            //                 excludeFile.forEach(function(ex, index) {
+            //                     var exFile = path.join(extractPath, infoFile + ex);
+            //                     if(fs.existsSync(exFile)) {
+            //                         if(index == 0 || index == 3 || index == 4) {
+            //                             fsUtil.rmDirSync(exFile);
+            //                         } else {
+            //                             fs.unlinkSync(exFile);
+            //                         }
+            //                     }
+            //                 });
+            //             }
+            //         });
+            //     } else {
+            //         if(err.errno == 3) {
+            //            error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
+            //         } else {
+            //           error(err);
+            //         }
+            //     }
+
+            // });
         }
         else
         {
@@ -349,47 +412,52 @@ function updateDate(tarFile,installPath){
         encoding: null
     }, function(err, res, body){
         if(!err && res.statusCode === 200) {
-              // 创建写入临时文件夹
-            if(!fs.existsSync('./tmp')){
-                fs.mkdirSync('./tmp');
-            }
-            tmpPath = './tmp/yo.tar.gz';
-            fs.writeFileSync(tmpPath, body);
-            //log(fs.existsSync('./tmp/yo.tar.gz'));
-            if(!fs.existsSync(installPath)){
-                error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
-            }else{
-                //解压
-                new targz().extract(tmpPath, './tmp' , function(err) {
-                    //log(err);
-                    if(!err) {
-                        if(fs.existsSync('./tmp/yo/lib/')){
-                            var newpath = installPath+'/yo/lib/';
-                                newpath = path.join(installPath , '/yo/lib');
-                                // log(newpath);
-                                // log(fs.existsSync(newpath));
-                            if(fs.existsSync(newpath)){
-                                fsUtil.rmDirSync(newpath);
-                            }
-                            fs.rename('./tmp/yo/lib/',newpath ,function(err){
-                                //log(err);
-                                 if(err){
-                                     error('更新失败');
-                                 }else{
-                                     success('更新成功');
-                                     fsUtil.rmDirSync('./tmp/');
-                                 }
-                            });
-                        };
-                    }else{
-                        error('文件解析失败！');
+
+            var temPathFile = installPath + 'tmpPathFile.txt';
+            fs.writeFile(temPathFile, 'installPath', function(err){
+                //log(err);
+                if(!err){
+                    // 创建写入临时文件夹
+                    if(!fs.existsSync('./tmp')){
+                        fs.mkdirSync('./tmp');
                     }
+                    tmpPath = './tmp/yo.tar.gz';
+                    fs.writeFileSync(tmpPath, body);
+                    //解压
+                    new targz().extract(tmpPath, './tmp' , function(err) {
+                        if(!err) {
+                            if(fs.existsSync('./tmp/yo/lib/')){
+                                //var newpath = installPath+'/yo/lib/';
+                                var newpath = path.join(installPath , '/yo/lib');
+                                if(fs.existsSync(newpath)){
+                                    fsUtil.rmDirSync(newpath);
+                                }
+                                fs.rename('./tmp/yo/lib/',newpath ,function(err){
+                                     if(err){
+                                         error('更新失败');
+                                     }else{
+                                         success('更新成功');
+                                         fsUtil.rmDirSync('./tmp/');
+                                         fs.unlinkSync(temPathFile);
 
-                });
-            }
+                                     }
+                                });
+                            };
+                        }else{
+                            error('文件解析失败！');
+                        }
 
-        }
-        else{
+                    });
+                } else {
+                    if(err.errno == 3) {
+                       error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
+
+                    } else {
+                      error(err);
+                    }
+                }
+            })
+        } else {
             error(tarFile + '解析失败，请确认是否存在此版本号文件');
         }
     });
@@ -403,8 +471,9 @@ function updateDate(tarFile,installPath){
  * 默认更新yo/lib目录文件
  */
 function update(installPath,version) {
+    var existInfoFile = path.join(installPath , infoFile);
     //判断当前目录下 yo目录是否存在
-    if(!fs.existsSync(infoFile)) {
+    if(!fs.existsSync(existInfoFile)) {
         error(installPath + " 下还未安装yo,请检查需更新目录！");
     }else {
         //error('已存在' + infoFile);
@@ -430,6 +499,31 @@ function update(installPath,version) {
     }
 
 }
+/**
+ * Yo 库历史版本号
+ *
+ */
+function yoversion(){
+    request(sourceConfigFile, function(err, res, body) {
+        var versionList;
+        if (!err && res.statusCode === 200) {
+            try {
+                var tmpdata= JSON.parse(body);
+                versionList = tmpdata.history;
+                warn('yo历史版本号:');
+                versionList.forEach(function(versionList)
+                 {
+                     log(versionList);
+                 });
+            } catch (e) {
+                error('历史版本文件解析失败。');
+                return;
+            }
+        } else {
+            error('历史版本文件下载失败！');
+        }
+    });
+}
 
 exports.usage = "yo构建工具"
 
@@ -442,6 +536,9 @@ exports.set_options = function(optimist) {
 
     optimist.alias('u', 'update');
     optimist.describe('u', '更新Yo');
+
+    optimist.alias('ver', 'yoversion');
+    optimist.describe('ver', '查看yo历史版本号');
 
     optimist.alias('v', 'version');
     optimist.describe('v', '查看yo构建工具版本号');
@@ -473,28 +570,29 @@ exports.run = function(options) {
     else {
         root = cwd;
     }
-    //log(customPath);
 
     options.publish = typeof options.p == "undefined" ? options.publish : options.p;
     options.install = typeof options.i == "undefined" ? options.install : options.i;
     options.update = typeof options.u == "undefined" ? options.update : options.u;
     options.version = typeof options.v == "undefined" ? options.version : options.v;
+    //options.yoversion = typeof options.ver == "undefined" ? opitons.yoversion : options.ver;
 
     if(options.version) {
         showVersion();
-    }
-    else if(options.publish) {
+    } else if(options.publish) {
         publish(root);
 
-    }else if(options.install) {
+    } else if(options.install) {
 
         //var installPath = options.path !==true ? root : path.join(root,'yo');
        // log(options);
         var version = options.i || options.install;
         install(root,version);
-    }else {
+    } else if(options.update){
         var updateversion = options.u || options.update;
         update(root,updateversion);
+    } else {
+        yoversion();
     }
 
 }
