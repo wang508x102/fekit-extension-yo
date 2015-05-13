@@ -8,7 +8,8 @@ var fs = require('fs'),
     fsUtil = require('./fs-util');
 
 // 下载地址
-var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
+//var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
+var BASE_URL = 'http://localhost:4369/test/lili/';
 
 var buildVersion = '0.0.1';
 // 默认安装目录
@@ -22,7 +23,8 @@ var versionFile = 'lib/core/variables.scss';
 // 配置文件
 var yoConfigFile = "yo.config";
 // 上传路径
-var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
+var uploadurl = 'http://localhost:4369/upload?path=test/lili';
+//var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
 
@@ -121,7 +123,6 @@ function publish(root) {
 
                 try {
                     var tmpdata= JSON.parse(body);
-                    //log(tmpdata.history);
                     sourceVersion = tmpdata.version;
                     if(version === sourceVersion) {
                         error('当前打包版本' + version + ' 与服务器最新版本一样！');
@@ -131,10 +132,8 @@ function publish(root) {
                             error('当前打包版本 ' + version + '小于服务器最新版本号！');
                             return;
                         }
-                        //log(versionList);
                         versionList = tmpdata.history;
                         versionList.push(version);
-                        //log(versionList);
                         createTmpDir(root,version,versionList);
                          //得到 yo.config文件  压缩 yo 包
                         compressData(infoFile,version,root);
@@ -144,8 +143,6 @@ function publish(root) {
                     return;
                 }
             } else {
-               //error('版本配置文件下载失败！');
-                //log(versionList);
                 versionList.push(version);
                 createTmpDir(root,version,versionList);
                 compressData(infoFile,version,root);
@@ -175,19 +172,6 @@ function checkLocalConfig(localConfigFile,version,versionList) {
             log('写文件' + localConfigFile + '操作失败,请重新发布');
         }
     });
-}
-// 发布进度
-function uploadProcess(successNum,version,path) {
-
-    if(successNum >= 2) {
-        success('版本' + version + '发布成功!');
-        rmNoEmptydir(path);
-    }
-    else{
-        info('打包中......');
-        info(successNum + '个文件打包成功，共2个文件');
-    }
-
 }
 // 删除非空目录
 function rmNoEmptydir(path) {
@@ -237,44 +221,52 @@ function compressData(infoFile,version,root) {
         }
         else{
             var successNum = 0;
-            //上传 yo 目录
-            request.post({
-                url: uploadurl,
-                formData: {
-                    file:fs.createReadStream(path.join(root, '/tmp/yo@' + version + '.map'))
-                }
-            }, function(err, res, body) {
-                if (err) {
-                    error(err);
-                } else {
-                    if(res.statusCode == 200)
-                    {
-                        //success('yo@' + version + '.map 文件发布成功');
-                        successNum ++;
-                        uploadProcess(successNum,version, root + '/tmp/');
-                        fsUtil.rmDirSync(yotmpPath);
+            async.series([function(callback){
+                //上传 yo 目录
+                request.post({
+                    url: uploadurl,
+                    formData: {
+                        file:fs.createReadStream(path.join(root, '/tmp/yo@' + version + '.map'))
                     }
-                }
-            });
-
-            //上传 config 文件
-            request.post({
-                url: uploadurl,
-                formData: {
-                    file: fs.createReadStream(path.join(root, '/tmp/' + yoConfigFile))
-                }
-            }, function(err, res, body) {
-                if (err) {
-                    error(err);
-                } else {
-                    if(res.statusCode == 200)
-                    {
-                        //success(yoConfigFile + '文件发布成功');
-                        successNum++;
-                        uploadProcess(successNum,version, root + '/tmp/');
+                }, function(err, res, body) {
+                    if (err) {
+                        error(err);
+                    } else {
+                        if(res.statusCode == 200)
+                        {
+                            //success('yo@' + version + '.map 文件发布成功');
+                            successNum ++;
+                            info('打包中......');
+                            info(successNum + '个文件打包成功，共2个文件');
+                            //uploadProcess(successNum,version, root + '/tmp/');
+                            fsUtil.rmDirSync(yotmpPath);
+                            callback();
+                        }
                     }
-                }
-            });
+                });
+            }, function(callback){
+                //上传 config 文件
+                request.post({
+                    url: uploadurl,
+                    formData: {
+                        file: fs.createReadStream(path.join(root, '/tmp/' + yoConfigFile))
+                    }
+                }, function(err, res, body) {
+                    if (err) {
+                        error(err);
+                    } else {
+                        if(res.statusCode == 200)
+                        {
+                            successNum++;
+                            info(successNum + '个文件打包成功，共2个文件');
+                            callback();
+                        }
+                    }
+                });
+            }], function() {
+                  success('版本' + version + '发布成功!');
+                  rmNoEmptydir(root + '/tmp/');
+            })
         }
     });
 }
@@ -500,10 +492,10 @@ exports.set_options = function(optimist) {
     optimist.describe('u', '更新Yo');
 
     optimist.alias('ver', 'yoversion');
-    optimist.describe('ver', '查看yo历史版本号');
+    optimist.describe('ver', '查看yo构建工具版本号');
 
     optimist.alias('v', 'version');
-    optimist.describe('v', '查看yo构建工具版本号');
+    optimist.describe('v', '查看yo历史版本号');
 
     optimist.describe('path', '指定路径,支持绝对和相对路径');
 
@@ -535,7 +527,7 @@ exports.run = function(options) {
     options.version = typeof options.v == "undefined" ? options.version : options.v;
 
     if(options.version) {
-        showVersion();
+        yoversion();
     } else if(options.publish) {
         publish(root);
 
@@ -546,7 +538,7 @@ exports.run = function(options) {
         var updateversion = options.u || options.update;
         update(root,updateversion);
     } else {
-        yoversion();
+        showVersion();
     }
 
 }
