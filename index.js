@@ -9,7 +9,6 @@ var fs = require('fs'),
 
 // 下载地址
 var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
-//var BASE_URL = 'http://localhost:4369/test/lili/';
 
 var buildVersion = '0.0.1';
 // 默认安装目录
@@ -19,12 +18,10 @@ var buildVersion = '0.0.1';
 //var infoFile = 'lib/';
 var infoFile = 'yo/';
 // 配置目录版本信息文件
-//var versionFile = 'core/variables.scss';
 var versionFile = 'lib/core/variables.scss';
 // 配置文件
 var yoConfigFile = "yo.config";
 // 上传路径
-//var uploadurl = 'http://localhost:4369/upload?path=test/lili';
 var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
@@ -208,7 +205,33 @@ function rmNoEmptydir(path) {
 }
 // 压缩并发布文件
 function compressData(infoFile,version,root) {
-    new targz().compress(infoFile, root + '/tmp/yo@' + version + '.map', function(err) {
+    //var yotmpPath = './yotmp/yo';
+    var yotmpPath = './yotmp';
+    var tmpInfoFile;
+    if(!fs.existsSync(yotmpPath)){
+        fs.mkdirSync(yotmpPath);
+    }
+    tmpInfoFile = path.join(yotmpPath , infoFile);
+    if(!fs.existsSync(tmpInfoFile))
+    {
+        fs.mkdirSync(tmpInfoFile);
+    }
+    fsUtil.copyDirSync(infoFile,tmpInfoFile);
+    fs.readdir(tmpInfoFile, function(err,files){
+        //清除文件夹中无用的版本文件
+        excludeFile.forEach(function(ex, index) {
+            var exFile = path.join(tmpInfoFile, ex);
+            if(fs.existsSync(exFile)) {
+                if(index == 0 || index == 3 || index == 4) {
+                    fsUtil.rmDirSync(exFile);
+                } else {
+                    fs.unlinkSync(exFile);
+                }
+            }
+        });
+    })
+
+    new targz().compress(tmpInfoFile, root + '/tmp/yo@' + version + '.map', function(err) {
         if (err) {
             error('版本' + version + '压缩失败,请重试');
         }
@@ -229,6 +252,7 @@ function compressData(infoFile,version,root) {
                         //success('yo@' + version + '.map 文件发布成功');
                         successNum ++;
                         uploadProcess(successNum,version, root + '/tmp/');
+                        fsUtil.rmDirSync(yotmpPath);
                     }
                 }
             });
@@ -264,19 +288,15 @@ function compressData(infoFile,version,root) {
  */
 
 function install(installPath,version) {
-    //log(version);
     if(version != true) {
         tarFile = BASE_URL + 'yo@' +  version + '.map';
-        //log('tarFile = '+ tarFile);
         existInstall(tarFile, installPath);
     }
     else{
-        //log(sourceConfigFile);
         request(sourceConfigFile, function(err, res, body) {
             if (res.statusCode === 200) {
                 var tmpdata= JSON.parse(body);
                 tarFile = BASE_URL + 'yo@' +  tmpdata.version + '.map';
-               // log('basetarFile = '+ tarFile);
                 existInstall(tarFile, installPath);
             } else {
                 error(sourceConfigFile + ' 解析失败！');
@@ -287,6 +307,10 @@ function install(installPath,version) {
 
 // 判断当前目录下 yo 文件是否存在
 function existInstall(tarFile,installPath) {
+    if(fs.existsSync(installPath)){
+
+    };
+
     if(fs.existsSync(installPath + '/src/' + infoFile)) {
         var rl = readline.createInterface({
           input: process.stdin,
@@ -313,12 +337,10 @@ function extractData(tarFile,installPath) {
         encoding: null
     },function (err, res, body) {
         if (!err && res.statusCode === 200) {
-             // 创建写入临时文件夹
+                    // 创建写入临时文件夹
                     if(!fs.existsSync('./tmp')){
                         fs.mkdirSync('./tmp');
                     }
-
-                    //tmpPath = './tmp/yo.tar.gz';
                     tmpPath = './tmp/yo.map';
                     fs.writeFileSync(tmpPath, body);
                     var extractPath =  path.join(installPath,'src');
@@ -329,65 +351,8 @@ function extractData(tarFile,installPath) {
                         }else{
                             success('安装成功');
                             fsUtil.rmDirSync('./tmp/');
-                            //fs.unlinkSync(temPathFile);
-                             //清除文件夹中无用的版本文件
-                            excludeFile.forEach(function(ex, index) {
-                                var exFile = path.join(extractPath, infoFile + ex);
-                                if(fs.existsSync(exFile)) {
-                                    if(index == 0 || index == 3 || index == 4) {
-                                        fsUtil.rmDirSync(exFile);
-                                    } else {
-                                        fs.unlinkSync(exFile);
-                                    }
-                                }
-                            });
                         }
                     });
-
-            // var temPathFile = installPath + 'tmpPathFile.txt';
-            // var temPathFile = path.join(installPath , 'tmpPathFile.txt');
-            // fs.writeFile(temPathFile, 'installPath', function(err){
-            //     log(err);
-            //     if(!err){
-            //         // 创建写入临时文件夹
-            //         if(!fs.existsSync('./tmp')){
-            //             fs.mkdirSync('./tmp');
-            //         }
-
-            //         //tmpPath = './tmp/yo.tar.gz';
-            //         tmpPath = './tmp/yo.map';
-            //         fs.writeFileSync(tmpPath, body);
-            //         var extractPath =  path.join(installPath,'src');
-            //         //解压
-            //         new targz().extract(tmpPath, extractPath, function(err) {
-            //             if(err) {
-            //                 error('安装失败');
-            //             }else{
-            //                 success('安装成功');
-            //                 fsUtil.rmDirSync('./tmp/');
-            //                 fs.unlinkSync(temPathFile);
-            //                  //清除文件夹中无用的版本文件
-            //                 excludeFile.forEach(function(ex, index) {
-            //                     var exFile = path.join(extractPath, infoFile + ex);
-            //                     if(fs.existsSync(exFile)) {
-            //                         if(index == 0 || index == 3 || index == 4) {
-            //                             fsUtil.rmDirSync(exFile);
-            //                         } else {
-            //                             fs.unlinkSync(exFile);
-            //                         }
-            //                     }
-            //                 });
-            //             }
-            //         });
-            //     } else {
-            //         if(err.errno == 3) {
-            //            error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
-            //         } else {
-            //           error(err);
-            //         }
-            //     }
-
-            // });
         }
         else
         {
@@ -406,16 +371,20 @@ function extractData(tarFile,installPath) {
  */
 
 function updateDate(tarFile,installPath){
-    //log(tarFile);
     request({
         url: tarFile,
         encoding: null
     }, function(err, res, body){
         if(!err && res.statusCode === 200) {
+            //todo 根目录权限
+            // if(!fs.existsSync(installPath)){
+            //     fs.mkdirSync(installPath,function(err){
+            //         log(err);
+            //     })
+            // }
 
             var temPathFile = installPath + 'tmpPathFile.txt';
             fs.writeFile(temPathFile, 'installPath', function(err){
-                //log(err);
                 if(!err){
                     // 创建写入临时文件夹
                     if(!fs.existsSync('./tmp')){
@@ -427,7 +396,6 @@ function updateDate(tarFile,installPath){
                     new targz().extract(tmpPath, './tmp' , function(err) {
                         if(!err) {
                             if(fs.existsSync('./tmp/yo/lib/')){
-                                //var newpath = installPath+'/yo/lib/';
                                 var newpath = path.join(installPath , '/yo/lib');
                                 if(fs.existsSync(newpath)){
                                     fsUtil.rmDirSync(newpath);
@@ -446,12 +414,10 @@ function updateDate(tarFile,installPath){
                         }else{
                             error('文件解析失败！');
                         }
-
                     });
                 } else {
                     if(err.errno == 3) {
                        error('初始化失败,在目录' + installPath + '下，没有权限创建文件' );
-
                     } else {
                       error(err);
                     }
@@ -476,19 +442,15 @@ function update(installPath,version) {
     if(!fs.existsSync(existInfoFile)) {
         error(installPath + " 下还未安装yo,请检查需更新目录！");
     }else {
-        //error('已存在' + infoFile);
         if(version != true) {
             tarFile = BASE_URL + 'yo@' +  version + '.map';
-            //log('tarFile = '+ tarFile);
             updateDate(tarFile, installPath);
         }
         else{
-            //log(sourceConfigFile);
             request(sourceConfigFile, function(err, res, body) {
                 if (res.statusCode === 200) {
                     var tmpdata= JSON.parse(body);
                     tarFile = BASE_URL + 'yo@' +  tmpdata.version + '.map';
-                   // log('basetarFile = '+ tarFile);
                     updateDate(tarFile, installPath);
                 } else {
                     error(sourceConfigFile + ' 解析失败！');
@@ -550,7 +512,6 @@ exports.set_options = function(optimist) {
 
 
 exports.run = function(options) {
-    //log(options);
     var root;
     var cwd = options.cwd;
     var customPath = options.path;
@@ -558,10 +519,7 @@ exports.run = function(options) {
 
     if(customPath) {
         if(customPath !== true) {
-            root = customPath.charAt(0) == '/' ? customPath : path.join(cwd, customPath)
-            //TODO
-            //root = customPath.charAt(0) == '/' ? path.join(cwd, customPath) : path.join(cwd, customPath)
-            //log(root);
+            root = customPath.charAt(0) == '/' ? customPath : path.join(cwd, customPath);
         }else{
             error('输入有误，请输入--help查看yo命令工具帮助');
             return;
@@ -575,7 +533,6 @@ exports.run = function(options) {
     options.install = typeof options.i == "undefined" ? options.install : options.i;
     options.update = typeof options.u == "undefined" ? options.update : options.u;
     options.version = typeof options.v == "undefined" ? options.version : options.v;
-    //options.yoversion = typeof options.ver == "undefined" ? opitons.yoversion : options.ver;
 
     if(options.version) {
         showVersion();
@@ -583,9 +540,6 @@ exports.run = function(options) {
         publish(root);
 
     } else if(options.install) {
-
-        //var installPath = options.path !==true ? root : path.join(root,'yo');
-       // log(options);
         var version = options.i || options.install;
         install(root,version);
     } else if(options.update){
