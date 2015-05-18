@@ -12,6 +12,7 @@
     "main": "index.js",
     "repository": "",
     "author": "leila",
+    "repository": "git@gitlab.corp.qunar.com:fed/yobuilder.git",
     "license": "BSD",
     "scripts":{
         "postinstall":"node ./scripts/postinstall.js",
