@@ -1,7 +1,7 @@
 {
     "fekit_extension_command_name":"yo",
     "name": "fekit-extension-yo",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "为fekit增加yo命令",
     "dependencies": {
         "async": "0.9.0",

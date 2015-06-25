@@ -38,9 +38,15 @@ YoBuilder
 例如：fekit yo -p
 
 ### --version || -v
-说明：查看Yo构建工具版本号。
+说明：查看Yo历史版本号。
 
 例如：fekit yo -v
+
+
+### --yoversion || --ver
+说明：查看Yo构建工具版本号。
+
+例如：fekit yo --ver
 
 ### --path
 说明：自定义路径，支持绝对路径和相对路径。对install命令都有效。
