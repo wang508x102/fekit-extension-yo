@@ -24,7 +24,8 @@ var versionFile = 'lib/core/variables.scss';
 var yoConfigFile = "yo.config";
 // 上传路径
 //var uploadurl = 'http://localhost:4369/upload?path=test/lili';
-var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
+//var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
+var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/uploadV2?key=yo&path=yo';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
 
