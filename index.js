@@ -11,7 +11,7 @@ var fs = require('fs'),
 var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
 //var BASE_URL = 'http://localhost:4369/test/lili/';
 
-var buildVersion = '0.0.4';
+var buildVersion = '0.0.5';
 // 默认安装目录
 //var yoWidgets = 'yo/';
 
@@ -25,7 +25,7 @@ var yoConfigFile = "yo.config";
 // 上传路径
 //var uploadurl = 'http://localhost:4369/upload?path=test/lili';
 //var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/upload?path=yo';
-var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/uploadV2?key=yo&path=yo';
+var uploadurl = 'http://l-uedmobile0.h.dev.cn0.qunar.com:4369/uploadV2?key=yo&path=';
 // 服务器端配置文件
 var sourceConfigFile = BASE_URL + yoConfigFile;
 
