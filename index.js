@@ -11,7 +11,7 @@ var fs = require('fs'),
 var BASE_URL = 'http://ued.qunar.com/mobile/source/yo/';
 //var BASE_URL = 'http://localhost:4369/test/lili/';
 
-var buildVersion = '0.0.3';
+var buildVersion = '0.0.4';
 // 默认安装目录
 //var yoWidgets = 'yo/';
 
